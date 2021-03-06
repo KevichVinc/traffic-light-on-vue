@@ -1,78 +1,70 @@
 <template>
   <div id="app">
     <div id="traffic-light">
-      <div class="light red" :class="{active: current=='red'}"><span>{{ currentTime }}</span></div>
-      <div class="light yellow" :class="{active: current=='yellow'}"></div>
-      <div class="light green" :class="{active: current=='green'}"><span>{{ currentTime }}</span></div>
+      <div class="light red" :class="{active: $route.name === COLORS.RED}"><span>{{ currentTime }}</span></div>
+      <div class="light yellow" :class="{active: $route.name === COLORS.ORANGE}"><span>{{ currentTime }}</span></div>
+      <div class="light green" :class="{active: $route.name === COLORS.GREEN}"><span>{{ currentTime }}</span></div>
+      <button @click="start" v-if="$route.name ==='home'">Старт</button>
+      <button @click="stop">Стоп</button>
+      <button @click="go">Продолжить</button>
    </div>
   </div>
 </template>
 
 <script>
 
-class State {
-  constructor(name, dur, next){
-    this.name = name;
-    this.dur = dur;
-    this.next = next;
-  }
-}
-
-class Constroller {
-  trigger(state, callback){
-    callback(state);
-    setTimeout(()=>{
-      this.trigger(state.next, callback);
-    }, state.dur * 1000)
-  }
-}
+import { COLORS, TIMER, COLORS_NAVIGATOR } from './constants/StopLightConfig'
 
 export default {
   data: function () {
     return {
-      current: 'red',
-      currentTime: 2,
-      timer: null
-    }
-
+      currentTime: 0,
+      currentTimer: null,
+      COLORS,
+    };
   },
   methods: {
-    startTimer() {
-      this.timer = setInterval(() => {
-        this.currentTime--
+    start() {
+      this.$router.push('/red')
+    },
+    stop() {
+      clearInterval(this.currentTimer)
+    },
+    go() {
+      this.switchToColor(this.$route.name, this.currentTime)
+    },
+    switchToColor(colorName, currentTime = 0) {
+      this.currentTime = currentTime || TIMER[colorName]
+      this.currentTimer = setInterval(() => {
+        this.currentTime = this.currentTime - 1
+
+        if (this.currentTime === 0) {
+          this.$router.push(`/${this.getNextColor(colorName)}`)
+          clearInterval(this.currentTimer)
+        }
+
       }, 1000)
     },
-    stopTimer() {
-      clearTimeout(this.timer)
-    },
+    getNextColor(currentColor) {
+      const currentIndex =  COLORS_NAVIGATOR.findIndex(color => color === currentColor)
+      const nextIndex = currentIndex + 1
+
+      if (nextIndex > COLORS_NAVIGATOR.length - 1) {
+        return COLORS_NAVIGATOR[0]
+      }
+
+      return COLORS_NAVIGATOR[currentIndex + 1]
+    }
   },
+
   watch: {
-    currentTime(time) {
-      if (time === 0) {
-        this.stopTimer()
+    $route(to) {
+      if (to.name !== 'home') {
+        this.currentTime = 0
+        this.switchToColor(to.name)
       }
     }
   },
-  mounted(){
-    const constroller = new Constroller();
-    
-    const red = new State('red', 15);
-    const yellowR = new State('yellow', 2);
-    const yellowG = new State('yellow', 2);
-    const green = new State('green', 8);
-    
-    red.next = yellowR;
-    yellowR.next = green;
-    green.next = yellowG;
-    yellowG.next = red;
-
-    constroller.trigger(red, (state)=>{
-      this.startTimer();
-      this.currentTime = state.dur;
-      this.current = state.name;
-    });
-    
-  }
 }
 </script>
 
