@@ -1,17 +1,13 @@
 export const COLORS = {
   RED: 'red',
   GREEN: 'green',
-  ORANGE: 'orange'
-}
+  YELLOW: 'yellow',
+};
 
-export const COLORS_NAVIGATOR = [
-  COLORS.RED,
-  COLORS.ORANGE,
-  COLORS.GREEN
-]
+export const COLORS_NAVIGATOR = [COLORS.RED, COLORS.YELLOW, COLORS.GREEN];
 
 export const TIMER = {
-  [COLORS.RED]: 4,
-  [COLORS.ORANGE]: 5,
-  [COLORS.GREEN]: 1
-}
+  [COLORS.RED]: 10,
+  [COLORS.YELLOW]: 3,
+  [COLORS.GREEN]: 15,
+};

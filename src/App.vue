@@ -1,12 +1,14 @@
 <template>
   <div id="app">
     <div id="traffic-light">
-      <div class="light red" :class="{active: $route.name === COLORS.RED}"><span>{{ currentTime }}</span></div>
-      <div class="light yellow" :class="{active: $route.name === COLORS.ORANGE}"><span>{{ currentTime }}</span></div>
-      <div class="light green" :class="{active: $route.name === COLORS.GREEN}"><span>{{ currentTime }}</span></div>
-      <button @click="start" v-if="$route.name ==='home'">Старт</button>
-      <button @click="stop">Стоп</button>
-      <button @click="go">Продолжить</button>
+      <div class="light red" :class="[currentTime < 3 && $route.name === COLORS.RED ? 'blink_me' : {active: $route.name === COLORS.RED}]"><span>{{ currentTime }}</span></div>
+      <div class="light yellow" :class="[currentTime < 3 && $route.name === COLORS.YELLOW ? 'blink_me' : {active: $route.name === COLORS.YELLOW}]"><span>{{ currentTime }}</span></div>
+      <div class="light green" :class="[currentTime < 3 && $route.name === COLORS.GREEN ? 'blink_me' : {active: $route.name === COLORS.GREEN}]"><span>{{ currentTime }}</span></div>
+      <div class="controllers">
+        <button @click="start" v-if="$route.name ==='home'">Старт</button>
+        <button @click="stop">Стоп</button>
+        <button @click="go">Продолжить</button>
+      </div>
    </div>
   </div>
 </template>
@@ -21,6 +23,7 @@ export default {
       currentTime: 0,
       currentTimer: null,
       COLORS,
+      direction: 'asc',
     };
   },
   methods: {
@@ -37,10 +40,12 @@ export default {
       this.currentTime = currentTime || TIMER[colorName]
       this.currentTimer = setInterval(() => {
         this.currentTime = this.currentTime - 1
-
         if (this.currentTime === 0) {
-          this.$router.push(`/${this.getNextColor(colorName)}`)
           clearInterval(this.currentTimer)
+          if (this.direction === 'asc') {
+            return this.$router.push(`/${this.getNextColor(colorName)}`)
+          } 
+            return this.$router.push(`/${this.getPreviousColor(colorName)}`)
         }
 
       }, 1000)
@@ -50,11 +55,23 @@ export default {
       const nextIndex = currentIndex + 1
 
       if (nextIndex > COLORS_NAVIGATOR.length - 1) {
-        return COLORS_NAVIGATOR[0]
+         this.direction = 'desc'
+         return this.getPreviousColor(currentColor)
       }
 
       return COLORS_NAVIGATOR[currentIndex + 1]
-    }
+    },
+    getPreviousColor(currentColor) {
+      const currentIndex =  COLORS_NAVIGATOR.findIndex(color => color === currentColor)
+      const nextIndex = currentIndex - 1
+
+      if (nextIndex < 0) {
+         this.direction = 'asc'
+         return this.getNextColor(currentColor)
+      }
+
+      return COLORS_NAVIGATOR[currentIndex -1]
+    },
   },
 
   watch: {
@@ -63,8 +80,19 @@ export default {
         this.currentTime = 0
         this.switchToColor(to.name)
       }
+    },
+    currentTime() {
+      localStorage.setItem('currentTime', this.currentTime)
     }
   },
+    created() {
+      console.log('something')
+      if (localStorage.currentTime && this.$route.name !== 'home') {
+        this.currentTime = localStorage.currentTime;
+        this.switchToColor(this.$route.name, this.currentTime)
+    }
+  }
+
 }
 </script>
 
@@ -73,6 +101,13 @@ export default {
 body {
   background: linear-gradient(rgb(52, 166, 255), rgb(71, 124, 255));
   height: 100vh;
+}
+
+button {
+  width: min-content;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  background: none;
 }
 
 #traffic-light {
@@ -135,6 +170,61 @@ body {
 .green {
   background: green;
 }
+
+.controllers {
+  filter: drop-shadow(3px 10px 15px rgba(0, 0, 0, 0.45));
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  margin: 200%;
+  width: min-content;
+}
+.controllers button{
+  height: 50px;
+  width: min-coontent;
+  background: linear-gradient(to bottom, #bada55, #da55bb);
+  font-weight: bold;
+  color: white;
+  font-size: 1.2rem;
+  border: none;
+  margin: -5px; 
+  padding: 10px;
+  stroke: black;
+  outline: none;
+}
+.controllers :nth-child(1){
+  border-radius: 20px 0 0 20px;
+}
+.controllers :nth-child(3){
+  border-radius: 0 20px 20px 0;
+}
+
+.blink_me {
+  opacity: 1;
+  animation: blinker 1s linear infinite;
+}
+
+.blink_me span {
+  visibility: visible;
+  opacity: 1;
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+button:hover{
+  cursor: pointer;
+  filter: drop-shadow(3px 5px 5px rgba(0, 0, 0, 0.45));
+}
+button:active{
+  filter: none;
+  transform: scale(.95);
+}
+
 
 
 </style>
